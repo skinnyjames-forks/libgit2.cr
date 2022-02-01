@@ -25,6 +25,10 @@ module FixtureRepo
     Git::Repository.open(path)
   end
 
+  def self.from_rugged(name, &block)
+    yield from_rugged(name)
+  end
+
   # Create a repository based on a libgit2 fixture repo.
   def self.from_libgit2(name, *args)
     path = mktmpdir("rugged-libgit2-#{name}")
@@ -35,6 +39,10 @@ module FixtureRepo
     prepare(path)
 
     Git::Repository.open(path)
+  end
+
+  def self.from_libgit2(name, *args, &block)
+    yield from_libgit2(name, *args)
   end
 
   def self.mktmpdir(name)
@@ -60,5 +68,22 @@ module FixtureRepo
     `git clone --quiet -- #{repository.path} #{path}`
 
     Git::Repository.open(path)
+  end
+
+  def self.clone_from_rugged(repo_name, &block)
+    source_repo = from_rugged(repo_name)
+    yield clone(source_repo)
+  end
+
+  def self.lookup_from_rugged_repo(repo_name, oid, &block)
+    repo = from_rugged(repo_name)
+    commit = repo.lookup_commit(oid)
+    yield commit, repo
+  end
+
+  def self.lookup_tree_from_rugged_clone(repo_name, oid, &block)
+    repo = from_rugged(repo_name)
+    cloned = clone(repo)
+    yield(cloned.lookup_tree(oid), cloned)
   end
 end

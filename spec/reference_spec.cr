@@ -1,8 +1,6 @@
 require "./spec_helper"
 
 describe Git::Reference do
-  repo = FixtureRepo.from_libgit2("testrepo")
-
   it "should validate ref name" do
     valid = "refs/foobar"
     invalid = "refs/~nope^*"
@@ -13,98 +11,118 @@ describe Git::Reference do
 
   it "each can handle exceptions" do
     expect_raises(Exception) do
-      repo.refs.each do
-        raise Exception.new("fail")
+      FixtureRepo.from_libgit2("testrepo.git") do |repo|
+        repo.refs.each do
+          raise Exception.new("fail")
+        end
       end
     end
   end
 
   it "should get references list" do
-    repo.refs.each.map(&.name).to_a.sort.should eq([
-      "refs/heads/br2",
-      "refs/heads/dir",
-      "refs/heads/executable",
-      "refs/heads/ident",
-      "refs/heads/long-file-name",
-      "refs/heads/master",
-      "refs/heads/merge-conflict",
-      "refs/heads/packed",
-      "refs/heads/packed-test",
-      "refs/heads/subtrees",
-      "refs/heads/test",
-      "refs/heads/testrepo-worktree",
-      "refs/tags/e90810b",
-      "refs/tags/foo/bar",
-      "refs/tags/foo/foo/bar",
-      "refs/tags/packed-tag",
-      "refs/tags/point_to_blob",
-      "refs/tags/test",
-    ])
+    FixtureRepo.from_libgit2("testrepo.git") do |repo|
+      repo.refs.each.map(&.name).to_a.sort.should eq([
+        "refs/heads/br2",
+        "refs/heads/dir",
+        "refs/heads/executable",
+        "refs/heads/ident",
+        "refs/heads/long-file-name",
+        "refs/heads/master",
+        "refs/heads/merge-conflict",
+        "refs/heads/packed",
+        "refs/heads/packed-test",
+        "refs/heads/subtrees",
+        "refs/heads/test",
+        "refs/heads/testrepo-worktree",
+        "refs/tags/e90810b",
+        "refs/tags/foo/bar",
+        "refs/tags/foo/foo/bar",
+        "refs/tags/packed-tag",
+        "refs/tags/point_to_blob",
+        "refs/tags/test",
+      ])
+    end
   end
 
   it "can filter refs with glob" do
-    repo.refs("refs/tags/*").map(&.name).to_a.sort.should eq([
-      "refs/tags/e90810b",
-      "refs/tags/foo/bar",
-      "refs/tags/foo/foo/bar",
-      "refs/tags/packed-tag",
-      "refs/tags/point_to_blob",
-      "refs/tags/test",
-    ])
+    FixtureRepo.from_libgit2("testrepo.git") do |repo|
+      repo.refs("refs/tags/*").map(&.name).to_a.sort.should eq([
+        "refs/tags/e90810b",
+        "refs/tags/foo/bar",
+        "refs/tags/foo/foo/bar",
+        "refs/tags/packed-tag",
+        "refs/tags/point_to_blob",
+        "refs/tags/test",
+      ])
+    end
   end
 
   it "can open reference" do
-    ref = repo.refs["refs/heads/master"]
-    ref.target_id
-    ref.type.should eq(Git::RefType::Oid)
-    ref.name.should eq("refs/heads/master")
-    ref.canonical_name.should eq("refs/heads/master")
-    ref.peel.should be_nil
+    FixtureRepo.from_libgit2("testrepo.git") do |repo|
+      ref = repo.refs["refs/heads/master"]
+      ref.target_id
+      ref.type.should eq(Git::RefType::Oid)
+      ref.name.should eq("refs/heads/master")
+      ref.canonical_name.should eq("refs/heads/master")
+      ref.peel.should be_nil
+    end
   end
 
   it "can open a symbolic reference" do
-    ref = repo.references["HEAD"]
-    ref.target_id.should eq("refs/heads/master")
-    ref.type.should eq(Git::RefType::Symbolic)
+    FixtureRepo.from_libgit2("testrepo.git") do |repo|
+      ref = repo.references["HEAD"]
+      ref.target_id.should eq("refs/heads/master")
+      ref.type.should eq(Git::RefType::Symbolic)
 
-    resolved = ref.resolve
-    resolved.type.should eq(Git::RefType::Oid)
-    resolved.target_id.to_s.should eq("099fabac3a9ea935598528c27f866e34089c2eff")
-    ref.peel.should eq(resolved.target_id)
+      resolved = ref.resolve
+      resolved.type.should eq(Git::RefType::Oid)
+      resolved.target_id.to_s.should eq("099fabac3a9ea935598528c27f866e34089c2eff")
+      ref.peel.should eq(resolved.target_id)
+    end
   end
 
   it "looking up missing ref returns nil" do
-    ref = repo.references["lol/wut"]?
-    ref.should be_nil
+    FixtureRepo.from_libgit2("testrepo.git") do |repo|
+      ref = repo.references["lol/wut"]?
+      ref.should be_nil
+    end
   end
 
   it "reference exists" do
-    repo.references.exists?("refs/heads/master").should be_true
-    repo.references.exists?("lol/wut").should be_false
+    FixtureRepo.from_libgit2("testrepo.git") do |repo|
+      repo.references.exists?("refs/heads/master").should be_true
+      repo.references.exists?("lol/wut").should be_false
+    end
   end
 
   it "test_load_packed_ref" do
-    ref = repo.references["refs/heads/packed"]
-    ref.target_id.to_s.should eq("41bc8c69075bbdb46c5c6f0566cc8cc5b46e8bd9")
-    ref.type.should eq(Git::RefType::Oid)
-    ref.name.should eq("refs/heads/packed")
+    FixtureRepo.from_libgit2("testrepo.git") do |repo|
+      ref = repo.references["refs/heads/packed"]
+      ref.target_id.to_s.should eq("41bc8c69075bbdb46c5c6f0566cc8cc5b46e8bd9")
+      ref.type.should eq(Git::RefType::Oid)
+      ref.name.should eq("refs/heads/packed")
+    end
   end
 
   it "test_resolve_head" do
-    ref = repo.references["HEAD"]
-    ref.target_id.should eq("refs/heads/master")
-    ref.type.should eq(Git::RefType::Symbolic)
+    FixtureRepo.from_libgit2("testrepo.git") do |repo|
+      ref = repo.references["HEAD"]
+      ref.target_id.should eq("refs/heads/master")
+      ref.type.should eq(Git::RefType::Symbolic)
 
-    head = ref.resolve
-    head.target_id.to_s.should eq ("099fabac3a9ea935598528c27f866e34089c2eff")
-    head.type.should eq(Git::RefType::Oid)
+      head = ref.resolve
+      head.target_id.to_s.should eq ("099fabac3a9ea935598528c27f866e34089c2eff")
+      head.type.should eq(Git::RefType::Oid)
+    end
   end
 
   it "test_reference_to_tag" do
-    ref = repo.references["refs/tags/test"]
+    FixtureRepo.from_libgit2("testrepo.git") do |repo|
+      ref = repo.references["refs/tags/test"]
 
-    ref.target_id.to_s.should eq("b25fa35b38051e4ae45d4222e795f9df2e43f1d1")
-    ref.peel.to_s.should eq("e90810b8df3e80c413d903f631643c716887138d")
+      ref.target_id.to_s.should eq("b25fa35b38051e4ae45d4222e795f9df2e43f1d1")
+      ref.peel.to_s.should eq("e90810b8df3e80c413d903f631643c716887138d")
+    end
   end
 
   it "test_reference_is_branch" do
